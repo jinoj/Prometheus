@@ -12,7 +12,100 @@ Prometheus's main features are:
     targets are discovered via service discovery or static configuration
     multiple modes of graphing and dashboarding support
 
-installtion Process
+installtion Process in cent 7
 
-  wget https://github.com/prometheus/prometheus/releases/download/v2.0.0/prometheus-2.0.0.linux-amd64.tar.gz
-  
+ 
+mkdir -p /opt/prometheus/
+wget https://github.com/prometheus/prometheus/releases/download/v2.0.0/prometheus-2.0.0.linux-amd64.tar.gz
+tar zxf prometheus-2.0.0.linux-amd64.tar.gz -C /opt/prometheus --strip-components=1
+
+vim /opt/prometheus/prometheus.yml
+
+add this line in last.. kindly make this entry each exporter runs on cient and server side this conf file
+
+scrape_configs:
+  - job_name: "promrtheus"
+    scrape_interval: "15s"
+    target_groups:
+    - targets: ['localhost:9090']
+
+
+manually start
+==============
+cd /opt/prometheus
+nohup ./prometheus --config.file=/opt/prometheus/prometheus.yml > prometheus.log 2>&1 &
+tail prometheus.log
+
+vim  /etc/systemd/system/prometheus.service
+
+[Unit]
+Description=prometheus
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/opt/prometheus/prometheus --config.file=/opt/prometheus/prometheus.yml
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+
+
+systemctl daemon-reload
+systemctl restart prometheus
+
+
+check it process:
+=================
+
+open browser: http://localhost:9090
+
+Node Exporter:
+==============
+Prometheus exporter for hardware and OS metrics exposed by *NIX kernels, written in Go with pluggable metric collectors.
+
+wget https://github.com/prometheus/node_exporter/releases/download/v0.15.2/node_exporter-0.15.2.linux-amd64.tar.gz
+
+
+Alert Manager
+=============
+The Alertmanager handles alerts sent by client applications such as the Prometheus server. It takes care of deduplicating, grouping, and routing them to the correct receiver integrations such as email, PagerDuty, or OpsGenie. It also takes care of silencing and inhibition of alerts.
+
+mkdir -p /opt/node_exporter/
+wget https://github.com/prometheus/node_exporter/releases/download/v0.15.2/node_exporter-0.15.2.linux-amd64.tar.gz
+tar zxf node_exporter-0.15.2.linux-amd64.tar.gz -C /opt/node_exporter --strip-components=1
+
+kindly make this entry in prometheus conf file 
+
+vim /opt/prometheus/prometheus.yml
+scrape_configs:
+  - job_name: "node"
+    scrape_interval: "15s"
+    target_groups:
+    - targets: ['localhost:9100']
+    
+  vim  /etc/systemd/system/node_exporter.service
+
+[Unit]
+Description=prometheus
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/opt/node_exporter/node_exporter
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+
+
+systemctl daemon-reload
+systemctl restart node_exporter && systemctl enabled node_exporter
+
+open Browser: 
+
+http://localhost:9100/metrics
+
+    
