@@ -1,0 +1,105 @@
+prometheus init script for centos 6
+
+Create init file.
+
+touch /etc/rc.d/init.d/prometheus
+chmod 755 /etc/rc.d/init.d/prometheus
+vi /etc/rc.d/init.d/prometheus
+
+Add following
+
+
+#!/bin/bash
+#
+# /etc/rc.d/init.d/prometheus
+#
+# Prometheus monitoring server
+#
+#  chkconfig: 2345 20 80 Read
+#  description: Prometheus monitoring server
+#  processname: prometheus
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+PROGNAME=prometheus
+PROG=/usr/hostonnet/prometheus/$PROGNAME
+USER=prometheus
+LOGFILE=/var/log/prometheus.log
+DATADIR=/usr/hostonnet/prometheus/data
+LOCKFILE=/var/run/$PROGNAME.pid
+CONFIG_FILE=/usr/hostonnet/prometheus/prometheus.yml
+ALERT_MGR_URL=localhost:9093
+
+start() {
+    echo -n "Starting $PROGNAME: "
+    cd /usr/hostonnet/prometheus/
+    #daemon --user $USER --pidfile="$LOCKFILE" "$PROG -config.file $CONFIG_FILE -storage.local.path $DATADIR -alertmanager.url $ALERT_MGR_URL &>$LOGFILE &"
+    daemon --user $USER --pidfile="$LOCKFILE" "$PROG -config.file $CONFIG_FILE -storage.local.path $DATADIR &>$LOGFILE &"
+    echo $(pidofproc $PROGNAME) >$LOCKFILE
+    echo
+}
+
+stop() {
+    echo -n "Shutting down $PROGNAME: "
+    killproc $PROGNAME
+    rm -f $LOCKFILE
+    echo
+}
+
+
+case "$1" in
+    start)
+    start
+    ;;
+    stop)
+    stop
+    ;;
+    status)
+    status $PROGNAME
+    ;;
+    restart)
+    stop
+    start
+    ;;
+    reload)
+    echo "Sending SIGHUP to $PROGNAME"
+    kill -SIGHUP $(pidofproc $PROGNAME)
+    ;;
+    *)
+        echo "Usage: service prometheus {start|stop|status|reload|restart}"
+        exit 1
+    ;;
+esac
+
+
+Create User For Prometheus
+
+groupadd -r prometheus
+useradd -r -g prometheus -s /sbin/nologin -d /usr/hostonnet/prometheus/ -c "prometheus Daemons" prometheus
+chown -R prometheus:prometheus /usr/hostonnet/prometheus/
+chown prometheus:prometheus /var/log/prometheus.log
+
+
+Run prometheus on Boot
+
+chkconfig --add prometheus
+chkconfig prometheus on
+
+Verify it is enabled
+
+[root@backup ~]# chkconfig --list | grep prome
+prometheus     	0:off	1:off	2:on	3:on	4:on	5:on	6:off
+[root@backup ~]# 
+
+3:on == will run on boot.
+
+
+Start Prometheus
+
+[root@backup ~]# service prometheus start
+Starting prometheus:                                       [  OK  ]
+[root@backup ~]# 
+
+
+prometheus 
