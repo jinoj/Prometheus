@@ -108,4 +108,8 @@ open Browser:
 
 http://localhost:9100/metrics
 
+haproxy exporter:
+============
+
+./haproxy_exporter --haproxy.scrape-uri="http://192.168.122.2:31337/admin?stats;csv" &
     
